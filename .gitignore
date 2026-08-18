@@ -1,0 +1,74 @@
+# Binaries (compiled executables, not source)
+/user_order_service
+/order-service
+/position_monitor_service
+/risk-service
+bin/
+
+# Logs
+logs/
+*.log
+
+# Coverage artifacts
+coverage.out
+coverage.html
+
+# Runtime data (CSV files generated/modified at runtime)
+data/*.csv
+data/exchange_positions/
+!data/*.csv.example
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+deploy.env
+
+# Config files that may contain webhook URLs or API-related deployment settings
+config.yaml
+!config.yaml.example
+
+test_user_order.yaml
+!test_user_order.yaml.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Go
+*.exe
+*.test
+
+# Temp files
+*.tmp
+.claude/
+cmd/position_monitor_service/position_monitor_service
+
+# Backup files (never track)
+*.bak
+data/*.csv.*
+
+# Archived test scripts (contain internal network info)
+cmd/.archive/
+
+# Coverage reports (all variants)
+coverage_*.out
+*.out
+
+# Local build artifacts / scratch binaries
+/exchange_position_reporter
+/sync_deribit_positions
+/query_deribit_positions.sh
+
+# Development process records (kept locally, not published)
+docs/archive/
+
+# AI assistant project instructions (local development aid, not user-facing docs)
+CLAUDE.md

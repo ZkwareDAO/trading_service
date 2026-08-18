@@ -1,0 +1,2 @@
+# Seed data for uprunning_orders.csv
+# id,user_id,relation_id,relation_type,exchange,symbol,pos_type,exchange_order_id,exchange_order_status,exchange_order_price,exchange_order_quantity,exchange_update_time,side,created_at,updated_at

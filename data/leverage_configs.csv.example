@@ -1,0 +1,2 @@
+# Seed data for leverage_configs.csv
+# id,user_id,asset,quote,leverage,exchange,status,pos_type,created_at,updated_at

@@ -1,0 +1,134 @@
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// UserOrderPositionsRequest - 仓位查询请求
+type UserOrderPositionsRequest struct {
+	UserName string `json:"user_name"`
+	Exchange string `json:"exchange"`
+	Deleted  int    `json:"deleted"` // 0=未删除, 1=已删除
+}
+
+// UserOrderPositionsResponse - 仓位查询响应
+type UserOrderPositionsResponse struct {
+	Code    int                       `json:"code"`
+	Message string                    `json:"message"`
+	Data    []*UserOrderPositionData  `json:"data,omitempty"`
+}
+
+// UserOrderPositionData - 仓位数据
+type UserOrderPositionData struct {
+	ID             uint64  `json:"id"`
+	UserStrategyID uint64  `json:"user_strategy_id"`
+	Symbol         string  `json:"symbol"`
+	Side           int     `json:"side"`
+	Quantity       float64 `json:"quantity"`
+	EntryPrice     float64 `json:"entry_price"`
+	MarkPrice      float64 `json:"mark_price"`
+	UnrealizedPnL  float64 `json:"unrealized_pnl"`
+	Roi            float64 `json:"roi"`
+	Exchange       string  `json:"exchange"`
+}
+
+// handleUserOrderPositions - 处理仓位查询请求
+func (s *Server) handleUserOrderPositions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 解析查询参数
+	userName := r.URL.Query().Get("user_name")
+	exchange := r.URL.Query().Get("exchange")
+
+	if userName == "" {
+		writeBadRequest(w, "user_name is required")
+		return
+	}
+	if exchange == "" {
+		writeBadRequest(w, "exchange is required")
+		return
+	}
+
+	// 查询仓位
+	positions := s.repo.ListUserOrderPositionsByUserName(userName, exchange)
+
+	// 转换为响应格式
+	data := make([]*UserOrderPositionData, 0, len(positions))
+	for _, pos := range positions {
+		data = append(data, &UserOrderPositionData{
+			ID:             pos.ID,
+			UserStrategyID: pos.UserStrategyID,
+			Symbol:         pos.Asset, // Asset字段
+			Side:           int(pos.Side),
+			Quantity:       pos.Quantity,
+			EntryPrice:     pos.PosPrice, // PosPrice字段
+			MarkPrice:      pos.CurrentPrice, // CurrentPrice字段
+			UnrealizedPnL:  pos.PnLValue, // PnLValue字段
+			Roi:            0, // UserOrderPosition没有ROI字段，需要计算或设为0
+			Exchange:       pos.Exchange,
+		})
+	}
+
+	response := UserOrderPositionsResponse{
+		Code:    0,
+		Message: "success",
+		Data:    data,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// handleUserPositions - 处理用户持仓查询 (user_positions表)
+func (s *Server) handleUserPositions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 解析查询参数
+	userName := r.URL.Query().Get("user_name")
+	exchange := r.URL.Query().Get("exchange")
+
+	if userName == "" {
+		writeBadRequest(w, "user_name is required")
+		return
+	}
+	if exchange == "" {
+		writeBadRequest(w, "exchange is required")
+		return
+	}
+
+	// 查询持仓
+	positions := s.repo.ListUserPositionsByUserName(userName, exchange)
+
+	// 转换为响应格式
+	data := make([]*UserOrderPositionData, 0, len(positions))
+	for _, pos := range positions {
+		data = append(data, &UserOrderPositionData{
+			ID:             pos.ID,
+			UserStrategyID: pos.UserStrategyID,
+			Symbol:         "", // UserPosition没有Symbol字段
+			Side:           0, // UserPosition没有Side字段
+			Quantity:       pos.Quantity,
+			EntryPrice:     0, // UserPosition没有EntryPrice字段
+			MarkPrice:      pos.CurrentPrice,
+			UnrealizedPnL:  pos.PnL,
+			Roi:            pos.ROI,
+			Exchange:       pos.Exchange,
+		})
+	}
+
+	response := UserOrderPositionsResponse{
+		Code:    0,
+		Message: "success",
+		Data:    data,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

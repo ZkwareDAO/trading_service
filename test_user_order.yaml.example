@@ -1,0 +1,22 @@
+server:
+  port: 8081
+storage:
+  data_dir: ./data
+notification:
+  enabled: true
+  open_url: "https://your-webhook-endpoint.example.com/send?key=YOUR_KEY"
+  close_url: "https://your-webhook-endpoint.example.com/send?key=YOUR_KEY"
+  test_url: "https://your-webhook-endpoint.example.com/send?key=YOUR_KEY"
+filter_sync_interval: 240h
+runtime:
+  price_snapshot_interval: 10s
+
+exchange:
+  binance_testnet: true
+  hyperliquid_testnet: true
+
+defaults:
+  stop_loss_pct: -0.02
+  profit_drawdown_pct: 0.05
+  trailing_activation_pct: 0.05
+  time_stop_hours: 72

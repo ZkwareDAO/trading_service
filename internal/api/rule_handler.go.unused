@@ -1,0 +1,115 @@
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"trading-service/internal/risk"
+	"trading-service/internal/risk/config"
+)
+
+// RuleRequest represents the API request for creating a rule
+type RuleRequest struct {
+	UserStrategyID uint64  `json:"user_strategy_id"` // 必填: 用户策略ID
+	ConditionName  string  `json:"condition_name"`   // 必填: 条件名称 (roi, pnl等)
+	Operator       string  `json:"operator"`         // 必填: 操作符 (<=, >=, ==等)
+	Value          float64 `json:"value"`            // 必填: 触发值
+	Action         string  `json:"action"`           // 必填: 动作类型 (reduce)
+	QuantityPct    float64 `json:"quantity_pct"`     // 必填: 平仓比例 (0-1)
+	Sort           int     `json:"sort"`             // 可选: 优先级排序
+}
+
+// RuleResponse represents the API response for a rule
+type RuleResponse struct {
+	ID             int                    `json:"id"`
+	UserStrategyID uint64                 `json:"user_strategy_id"`
+	ConditionName  string                 `json:"condition_name"`
+	Operator       string                 `json:"operator"`
+	Value          float64                `json:"value"`
+	Action         string                 `json:"action"`
+	Params         map[string]interface{} `json:"params"`
+	Sort           int                    `json:"sort"`
+	Status         string                 `json:"status"`
+	CreatedAt      string                 `json:"created_at"`
+	UpdatedAt      string                 `json:"updated_at"`
+}
+
+// createRuleHandler handles POST /api/v1/rules
+func (s *Server) createRuleHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req RuleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeBadRequest(w, "invalid JSON")
+		return
+	}
+
+	// Validate required fields
+	if req.UserStrategyID == 0 {
+		writeBadRequest(w, "user_strategy_id is required")
+		return
+	}
+	if req.ConditionName == "" {
+		writeBadRequest(w, "condition_name is required")
+		return
+	}
+	if req.Operator == "" {
+		writeBadRequest(w, "operator is required")
+		return
+	}
+	if req.Action == "" {
+		writeBadRequest(w, "action is required")
+		return
+	}
+	if req.QuantityPct <= 0 {
+		req.QuantityPct = 1.0 // Default to 100%
+	}
+
+	// Create rule with auto-generated ID
+	now := time.Now()
+	rule := risk.Rule{
+		ID:             s.ruleStore.NextID(),
+		UserStrategyID: req.UserStrategyID,
+		ConditionName:  req.ConditionName,
+		Operator:       req.Operator,
+		Value:          req.Value,
+		Sort:           req.Sort,
+		Status:         config.RuleStatusActive,
+		Action:         req.Action,
+		Params: map[string]interface{}{
+			"quantity_pct": req.QuantityPct,
+			"order_type":   1, // Default: market order
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	// Persist via RuleStore
+	if err := s.ruleStore.AddRules([]risk.Rule{rule}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return created rule
+	response := RuleResponse{
+		ID:             rule.ID,
+		UserStrategyID: rule.UserStrategyID,
+		ConditionName:  rule.ConditionName,
+		Operator:       rule.Operator,
+		Value:          req.Value, // Use original float64 value
+		Action:         rule.Action,
+		Params:         rule.Params,
+		Sort:           rule.Sort,
+		Status:         rule.Status,
+		CreatedAt:      rule.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:      rule.UpdatedAt.Format(time.RFC3339),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}

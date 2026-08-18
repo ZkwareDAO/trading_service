@@ -1,0 +1,2 @@
+# Seed data for user_orders.csv
+# id,user_id,user_strategy_id,pos_type,exchange,valid_before,base_asset,quote_asset,quantity,cash,trigger_price,slippage,side,order_type,status,finished_at,created_at,updated_at

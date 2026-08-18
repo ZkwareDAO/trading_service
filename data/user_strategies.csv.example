@@ -1,0 +1,3 @@
+# Seed data for user_strategies.csv
+# id,user_id,name,exchange,valid_before,cash,parts,status,strategy_id,risk_strategy_type,orders_num,created_at,updated_at
+1,1,OBVATRV2,binance,"2030-12-31T08:00:00Z",5000,5,1,,traditional,0,"2026-06-22T00:00:00Z","2026-06-22T00:00:00Z"

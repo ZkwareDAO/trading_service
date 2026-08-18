@@ -1,0 +1,2 @@
+# Seed data for strategies.csv
+# id,name,strategy_type,model_name,description,params,created_at,updated_at
